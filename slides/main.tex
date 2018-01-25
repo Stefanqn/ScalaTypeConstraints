@@ -1,0 +1,157 @@
+\documentclass[11pt]{beamer}
+%\hypersetup{hidelinks}
+\usetheme{Montpellier}
+%\usetheme{Pittsburgh}
+
+\usepackage[utf8]{inputenc}
+\usepackage{scala2}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{listings}
+% --------------------------------------------------------------------------
+
+% --------------------------------------------------------------------------
+
+\author{Stefan}
+\title{\textless:\textless}
+%\setbeamercovered{transparent} 
+%\setbeamertemplate{navigation symbols}{} 
+%\logo{} 
+%\institute{} 
+\date{} 
+\subject{sad-with-a-hat} 
+\begin{document}
+
+
+%% Title
+\begin{frame}
+\titlepage
+Based on \href{http://blog.bruchez.name/2015/11/generalized-type-constraints-in-scala.html}{Generalized type constraints in Scala}
+\end{frame}
+
+%% ToC
+\begin{frame} 
+	\frametitle{Table of content} 
+	\tableofcontents 
+\end{frame}
+
+\section{Introduction} 
+\subsection{Usage}
+
+\begin{frame}[fragile]
+\frametitle{How is it useful?}
+\begin{itemize}
+\item on Option
+\begin{lstlisting} 
+def flatten[B](implicit ev: A <:< Option[B]): Option[B]
+\end{lstlisting} %\pause
+
+\item on Traversable
+\begin{lstlisting} 
+def toMap[K, V](implicit ev: A <:< (K, V)): Map[K, V]
+\end{lstlisting} %\pause
+
+\item on Try
+\begin{lstlisting} 
+def flatten[U](implicit ev: T <:< Try[U]): Try[U]
+\end{lstlisting} 
+\end{itemize}
+\end{frame}
+
+\begin{frame}{What do they have in common?}
+\begin{itemize}
+\item implicit parameter list, with a single parameter called ev
+\item type of this parameter is of the form \lstinline{Type1 <:< Type2}
+\end{itemize}
+\end{frame}
+
+
+\subsection{Meaning}
+\begin{frame}[fragile]{Meaning}
+\lstinline {Type1 <:< Type2} \newline\newline
+\begin{block}{Meaning} %definition, theorem, lemma, proof, corollary, or example
+\textit{Make sure that Type1 is a subtype of Type2, or else report an error.}
+\end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+
+\begin{block}{Example 1} 
+\begin{lstlisting} 
+scala> val oo: Option[Option[Int]] = Some(Some(42))
+oo: Option[Option[Int]] = Some(Some(42))
+
+scala> oo.flatten
+res1: Option[Int] = Some(42)
+\end{lstlisting} 
+\end{block}
+
+\begin{block}{Example 2}
+\begin{lstlisting} 
+scala> val oi: Option[Int] = Some(42)
+oi: Option[Int] = Some(42)
+
+scala> oi.flatten
+<console>:21: error: Cannot prove that Int <:< Option[B].
+       oi.flatten
+\end{lstlisting} 
+\end{block} 
+\end{frame}
+
+
+\section{Questions} 
+\subsection{Can’t we just use type bounds?}
+\begin{frame}[fragile] {Plain example}
+\begin{lstlisting} 
+scala> def tuple[T, U](t: T, u: U) = (t, u)
+scala> tuple("Lincoln", 42)
+res1: (String, Int) = (Lincoln,42)
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile] {Example with upper bound}
+\begin{lstlisting} 
+scala> def tupleIfSubtype[T <: U, U](t: T, u: U) = (t, u)
+scala> tupleIfSubtype("Lincoln", 42)
+\end{lstlisting} 
+\begin{uncoverenv}<2> 
+\begin{lstlisting} 
+res2: (String, Any) = (Lincoln,42)
+\end{lstlisting} 
+\end{uncoverenv}
+\end{frame}
+
+\begin{frame}[fragile] {Puzzler}
+\begin{block}{Why?}
+\textit{type inference solves a constraint system}
+\end{block}\pause
+
+\begin{block}{so given}
+\begin{lstlisting} 
+scala> def tupleIfSubtype[T <: U, U](t: T, u: U) = (t, u)
+scala> tupleIfSubtype("Lincoln", 42)
+res2: (String, Any) = (Lincoln,42)
+\end{lstlisting} 
+\end{block}
+
+\begin{block}{the constraints are satisfied with}
+\begin{itemize}
+\item String is a String of course
+\item Int is a subtype of Any
+\item String is also a subtype of Any
+\end{itemize}
+\end{block}
+
+
+
+\end{frame}
+
+\section{Other} 
+\begin{frame} {Other}
+=:= \\
+\textless:!\textless
+\end{frame}
+
+\end{document}
