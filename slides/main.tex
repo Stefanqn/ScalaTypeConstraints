@@ -72,13 +72,12 @@ def flatten[U](implicit ev: T <:< Try[U]): Try[U]
 \subsection{Meaning}
 \begin{frame}[fragile]{Meaning}
 \lstinline {Type1 <:< Type2} \newline\newline
-\begin{block}{Meaning} %definition, theorem, lemma, proof, corollary, or example
+\begin{block}{Meaning}
 \textit{Make sure that Type1 is a subtype of Type2, or else report an error.}
 \end{block}
 \end{frame}
 
 \begin{frame}[fragile]
-
 \begin{block}{Example 1} 
 \begin{lstlisting} 
 scala> val oo: Option[Option[Int]] = Some(Some(42))
