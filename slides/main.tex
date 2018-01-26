@@ -205,6 +205,9 @@ tupleIfSubtype(new Apple(), new Fruit())(<::<.conforms[Apple])
 \lstinline{new <:<[Any,Any] \{ def apply(x: Any): Any = x \}}
 \item and typecast it:\\
 \lstinline{singleton_<:<.asInstanceOf[A <:< A]}
+\item evidence also used as conversion $From \Rightarrow To$, e.g. in Option: \newline
+\lstinline{def flatten[B](implicit ev: A <:< Option[B]): Option[B] =
+if (isEmpty) None else ev(this.get)}
 \end{itemize}
 \end{frame}
 
@@ -213,7 +216,7 @@ tupleIfSubtype(new Apple(), new Fruit())(<::<.conforms[Apple])
 \begin{itemize}
 \item alternative: implicit class or type class $\rightarrow$ more overhead
 \item exact type \lstinline{=:=[From, To]} vs \lstinline{<:<[-From, +To]} \pause
-\item not subtype \textless:!\textless:
+\item not subtype \textless:!\textless
 \begin{lstlisting} 
 def unexpected : Nothing = sys.error("Unexpected invocation")
 @scala.annotation.implicitNotFound("${A} must not be a subtype of ${B}")
