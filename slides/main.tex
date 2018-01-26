@@ -15,7 +15,8 @@
 % --------------------------------------------------------------------------
 
 \author{Stefan}
-\title{\textless:\textless}
+%\title{\textless:\textless}
+\title{Generalized type constraints}
 %\setbeamercovered{transparent} 
 %\setbeamertemplate{navigation symbols}{} 
 %\logo{} 
@@ -101,7 +102,7 @@ scala> oi.flatten
 \end{frame}
 
 
-\section{Questions} 
+\section{Type bound usage} 
 \subsection{Can’t we just use type bounds?}
 \begin{frame}[fragile] {Plain example}
 \begin{lstlisting} 
@@ -123,6 +124,7 @@ res2: (String, Any) = (Lincoln,42)
 \end{uncoverenv}
 \end{frame}
 
+\subsection{Constraint system}
 \begin{frame}[fragile] {Puzzler}
 \begin{block}{Why?}
 \textit{type inference solves a constraint system}
@@ -143,15 +145,84 @@ res2: (String, Any) = (Lincoln,42)
 \item String is also a subtype of Any
 \end{itemize}
 \end{block}
+\end{frame}
 
 
 
+\section{How does it work?}
+\subsection{Simplified}
+\begin{frame}[fragile] {Simplified implementation}
+\begin{lstlisting} 
+trait <::<[-From, +To]
+
+object <::< {
+  implicit def conforms[A]: A <::< A = new <::<[A,A]{}
+}
+\end{lstlisting} \pause
+
+\begin{block}{e.g.}
+\begin{lstlisting} 
+def tupleIfSubtype[T, U](t: T, u: U)(implicit ev: T <::< U) = (t, u)
+
+tupleIfSubtype(new Apple(), new Fruit())(<::<.conforms[Fruit])
+tupleIfSubtype(new Apple(), new Fruit())(<::<.conforms[Apple])
+\end{lstlisting} 
+\end{block}
+\end{frame}
+
+\subsection{Explained}
+\begin{frame}{Why does it work?}
+\begin{itemize}
+\item Variance of the type parameters of 
+\lstinline{trait <::<[-From, +To]} is similar to a function: require less, provide more: $F \Rightarrow T$ 
+\item $\rightarrow$ compiler tries to find a type \lstinline{<::<[A, A]} that conforms to e.g. \lstinline{<::<[Apple, Fruit]} 
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile] {What constraints must be satisfied?}
+\begin{itemize}
+\item $F \Rightarrow T$ is required, what are the constraints to pass
+\item $A \Rightarrow A$? \pause
+\item Due to variance \lstinline{trait <::<[-F, +T]}:
+\begin{itemize}
+\item A must be a supertype of F: \lstinline{A >: F} or \lstinline{F <: A}
+\item A must be a subtype of T: \lstinline{A <: T} 
+\end{itemize}\pause
+\item $\rightarrow$ \lstinline{F <: A <: T}  
+\item $\rightarrow$ \lstinline{F <: T}  
+\end{itemize}
+\end{frame}
+
+\subsection{Implementation}
+\begin{frame}{Real implementation}
+\begin{itemize}
+\item adds a nice error message: \newline
+\lstinline{\@implicitNotFound(msg = "Cannot prove that $\{From\} <:< $\{To\}.")}
+\item extends function: 
+\lstinline{class <:<[-From, +To] extends (From => To)}
+\item uses a singleton value: \newline
+\lstinline{val singleton_<:< =}
+\lstinline{new <:<[Any,Any] \{ def apply(x: Any): Any = x \}}
+\item and typecast it:\\
+\lstinline{singleton_<:<.asInstanceOf[A <:< A]}
+\end{itemize}
 \end{frame}
 
 \section{Other} 
-\begin{frame} {Other}
-=:= \\
-\textless:!\textless
+\begin{frame}[fragile] {Other}
+\begin{itemize}
+\item alternative: implicit class or type class $\rightarrow$ more overhead
+\item exact type \lstinline{=:=[From, To]} vs \lstinline{<:<[-From, +To]} \pause
+\item not subtype \textless:!\textless:
+\begin{lstlisting} 
+def unexpected : Nothing = sys.error("Unexpected invocation")
+@scala.annotation.implicitNotFound("${A} must not be a subtype of ${B}")
+trait <:!<[A, B] extends Serializable
+implicit def nsub[A, B] : A <:!< B = new <:!<[A, B] {}
+implicit def nsubAmbig1[A, B >: A] : A <:!< B = unexpected
+implicit def nsubAmbig2[A, B >: A] : A <:!< B = unexpected
+\end{lstlisting} 
+\end{itemize}
 \end{frame}
 
 \end{document}
